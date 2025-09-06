@@ -208,22 +208,32 @@ public class Model {
                 break;
             }
         }
+        // We have to check this, otherwise it will double with itself.
+        if (targetY > y) {
+            // Check if a merge will happen
+            Tile targetTile = board.tile(x, targetY);
+            if (targetTile != null) {
+                score += 2 * targetTile.value();
+            }
+            board.move(x, targetY, currTile);
+        }
 
-        board.move(x, targetY, currTile);
+
+
 
 
         // TODO: Tasks 5, 6, and 10. Fill in this function.
     }
 
     /** Assume tileFrom is not null.
-     *  Return true if tileTo is null or they have the same value.
+     *  Return true if tileTo is null, or they have the same value, and tileTo has not merged yet.
      */
     public Boolean isAbleToMerge(Tile tileFrom, Tile tileTo) {
         if (tileTo == null) {
             return true;
         }
         else {
-            return (tileFrom.value() == tileTo.value());
+            return (tileFrom.value() == tileTo.value() && (! tileTo.wasMerged()));
         }
     }
 
@@ -234,10 +244,20 @@ public class Model {
      * */
     public void tiltColumn(int x) {
         // TODO: Task 7. Fill in this function.
+        for (int i = board.size() - 1; i >= 0; i --) {
+            moveTileUpAsFarAsPossible(x, i);
+        }
     }
 
     public void tilt(Side side) {
         // TODO: Tasks 8 and 9. Fill in this function.
+        // Set the correct side first.
+        board.setViewingPerspective(side);
+        for (int x = 0; x < board.size(); x ++) {
+            tiltColumn(x);
+        }
+        // Set the side back to North.
+        board.setViewingPerspective(Side.NORTH);
     }
 
     /** Tilts every column of the board toward SIDE.
