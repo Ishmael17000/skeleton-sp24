@@ -103,6 +103,18 @@ public class Model {
      */
     public boolean maxTileExists() {
         // TODO: Task 3. Fill in this function.
+        for (int i = 0; i < board.size(); i++) {
+            for (int j = 0; j < board.size(); j++) {
+                Tile currentTile = board.tile(i, j);
+                if (currentTile == null) {
+                    continue;
+                }
+                int value = currentTile.value();
+                if (value == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -114,9 +126,57 @@ public class Model {
      */
     public boolean atLeastOneMoveExists() {
         // TODO: Fill in this function.
+        if (this.emptySpaceExists()) {
+            return true;
+        }
+        else {
+            return this.hasSameNeighbours();
+        }
+    }
+    /** Return true if there are two adjacent tiles of the same value.
+     *  Assuming that there are no empty spaces.
+     */
+    public boolean hasSameNeighbours() {
+        for (int row = 0; row < board.size(); row ++) {
+            if (rowHasSameNeighbours(row)) {
+                return true;
+            }
+        }
+        for (int column = 0; column < board.size(); column ++) {
+            if (columnHasSameNeighbours(column)) {
+                return true;
+            }
+        }
         return false;
     }
 
+    /** Return true if the i-th role has same neighbours.
+     * Assume no empty spaces.
+     */
+    public boolean rowHasSameNeighbours(int i) {
+        for (int j =0; j < board.size() - 1; j ++) {
+            Tile currentTile = board.tile(i, j);
+            Tile nextTile = board.tile(i, j + 1);
+            if (currentTile.value() == nextTile.value()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Return true if the i-th column has same neighbours.
+     * Assume no empty spaces.
+     */
+    public boolean columnHasSameNeighbours(int i) {
+        for (int j =0; j < board.size() - 1; j ++) {
+            Tile currentTile = board.tile(j, i);
+            Tile nextTile = board.tile(j + 1, i);
+            if (currentTile.value() == nextTile.value()) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Moves the tile at position (x, y) as far up as possible.
      *
@@ -133,10 +193,38 @@ public class Model {
      */
     public void moveTileUpAsFarAsPossible(int x, int y) {
         Tile currTile = board.tile(x, y);
+        if (currTile == null) {
+            return;
+        }
         int myValue = currTile.value();
         int targetY = y;
 
+        while (targetY < board.size() - 1) {
+            Tile nextTile = board.tile(x, targetY + 1);
+            if (isAbleToMerge(currTile, nextTile)) {
+                targetY ++;
+            }
+            else {
+                break;
+            }
+        }
+
+        board.move(x, targetY, currTile);
+
+
         // TODO: Tasks 5, 6, and 10. Fill in this function.
+    }
+
+    /** Assume tileFrom is not null.
+     *  Return true if tileTo is null or they have the same value.
+     */
+    public Boolean isAbleToMerge(Tile tileFrom, Tile tileTo) {
+        if (tileTo == null) {
+            return true;
+        }
+        else {
+            return (tileFrom.value() == tileTo.value());
+        }
     }
 
     /** Handles the movements of the tilt in column x of the board
