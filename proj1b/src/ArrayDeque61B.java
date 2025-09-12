@@ -1,11 +1,12 @@
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ArrayDeque61B<T> implements Deque61B<T> {
     public int size;
     public Object[] items;
     private int underlyingSize;
-    private final int initialUnderlyingSize = 100;
+    private static final int initialUnderlyingSize = 128;
 
 
     /* The deque goes clockwise along a looped ArrayList.
@@ -48,32 +49,63 @@ public class ArrayDeque61B<T> implements Deque61B<T> {
 
     @Override
     public List<T> toList() {
-        return List.of();
+        List<T> returnList = new ArrayList<>(size);
+        for (int i = 0; i < size; i ++) {
+            returnList.addLast((T) items[trueIndex(startIndex + 1 + i)]);
+        }
+        return returnList;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return (size == 0);
     }
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     @Override
     public T removeFirst() {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        // To save memory.
+        if (underlyingSize >= 16 && underlyingSize / size >= 4) {
+            this.shrinkSize();
+        }
+
+        T returnElement = get(0);
+        items[trueIndex(startIndex + 1)] = null;
+        startIndex = trueIndex(startIndex + 1);
+        size -= 1;
+        return returnElement;
     }
 
     @Override
     public T removeLast() {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        // To save memory.
+        if (underlyingSize >= 16 && underlyingSize / size >= 4) {
+            this.shrinkSize();
+        }
+
+        T returnElement = get(size - 1);
+        items[trueIndex(endIndex - 1)] = null;
+        endIndex = trueIndex(endIndex - 1);
+        size -= 1;
+        return returnElement;
     }
 
     @Override
     public T get(int index) {
-        return null;
+        if (index < 0 || index >= size) {
+            return null;
+        }
+        return (T) items[trueIndex(startIndex + index + 1)];
     }
 
     @Override
@@ -84,13 +116,24 @@ public class ArrayDeque61B<T> implements Deque61B<T> {
     // Expand the capacity of our underlying ArrayList.
     private void doubleSize() {
         Object[] newList = (T[]) new Object[underlyingSize * 2];
-        // ArrayList seems to have no slice copy method, so I'm just going to use for loop here.
-        // Since we don't know where to start from and end with, so we have to travel through the whole list.
-        // In this case, the startIndex and endIndex don't need to change.
-        for (int i = 0; i < underlyingSize; i ++) {
-            newList[i] = items[i]; // !!! This is not true. Think it twice.
+        for (int i = 0; i < size; i ++) {
+            newList[i] = items[trueIndex(startIndex + 1 + i)];
         }
         underlyingSize *= 2;
+        startIndex = underlyingSize - 1;
+        endIndex = size;
+        items = newList;
+    }
+
+    //Shrink the capacity to half.
+    private void shrinkSize() {
+        Object[] newList = (T[]) new Object[underlyingSize / 2];
+        for (int i = 0; i < size; i ++) {
+            newList[i] = items[trueIndex(startIndex + 1 + i)];
+        }
+        underlyingSize /= 2;
+        startIndex = underlyingSize - 1;
+        endIndex = size;
         items = newList;
     }
 
