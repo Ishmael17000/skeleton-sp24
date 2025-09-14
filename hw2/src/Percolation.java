@@ -6,19 +6,21 @@ public class Percolation {
     // TODO: Add any necessary instance variables.
     public final int N; // The size of the board.
     public boolean[][] openStatus; // Use a matrix of booleans to store the status.
+    public int numOfOpenSites;
     private final WeightedQuickUnionUF trees; // The sorting model.
 
-    // Virtual top and bottom.
+    // The top and bottom sites are virtual, and doesn't engage with neighbours interaction.
     private final int top;
     private final int bottom;
 
-    public Percolation(int N) {
-        if (N <= 0) {
+    public Percolation(int size) {
+        if (size <= 0) {
             throw new java.lang.IllegalArgumentException();
         }
-        this.N = N;
-        this.openStatus = new boolean[N][N];
-        this.trees = new WeightedQuickUnionUF(N * N + 2); // N^2 sites plus virtual top and bottom.
+        N = size;
+        openStatus = new boolean[N][N];
+        numOfOpenSites = 0;
+        trees = new WeightedQuickUnionUF(N * N + 2); // N^2 sites plus virtual top and bottom.
         top = N * N;
         bottom = N * N + 1;
     }
@@ -33,10 +35,16 @@ public class Percolation {
         openStatus[row][col] = true;
 
         // Update the union tree structure.
-        int thisOrdinal = gridToLine(row, col);
+        connectNeighbours(row, col);
+        // Special case when dealing virtual top and bottom.
+        if (row == 0) {
+            connectToTop(row, col);
+        }
+        if (row == N-1) {
+            connectToBottom(row, col);
+        }
 
-
-
+        numOfOpenSites += 1;
     }
 
     /** Return whether a site is open (has been opened). */
@@ -50,79 +58,87 @@ public class Percolation {
 
     /** Return whether a site is connected to another open site at the top. */
     public boolean isFull(int row, int col) {
-        if (row == 0) {
-            return true;
-        }
         int thisOrdinal = gridToLine(row, col);
-        // Naive approach by checking the bottom sitewise. This takes linear time.
-//        int thisOrdinal = gridToLine(row, col);
-//        for (int i = 0; i < N; i ++) {
-//            int siteOrdinal = gridToLine(N-1, i);
-//            if (trees.connected(siteOrdinal, thisOrdinal)) {
-//                return true;
-//            }
-//        }
         return trees.connected(thisOrdinal, top);
 
     }
 
     public int numberOfOpenSites() {
-        // TODO: Fill in this method.
-        return 0;
+        return numOfOpenSites;
     }
 
     public boolean percolates() {
         return trees.connected(top, bottom);
     }
 
-    // TODO: Add any useful helper methods (we highly recommend this!).
-    // TODO: Remove all TODO comments before submitting.
 
-    // The following two methods convert between grid coordinates and ordinal numbers.
+
+    /** Convert grid coordinates to line index. */
     private int gridToLine(int x, int y) {
         return x * N + y;
     }
 
-    private int[] lineToGrid(int i) {
-        int x = i / (N - 1) - 1;
-        int y = i - N * x;
-        return new int[] {x, y};
-    }
-
-    // Return the neighbours (at most 4) of coordinate (row, column) in line coordinate.
+    /** Return the neighbours (at most 4) of coordinate (row, column) in grid coordinate. */
     private int[][] findNeighbours(int row, int column) {
-        int[] returnList = new int[4];
+        int[][] returnList = new int[4][];
         int[] range = {-1, 1};
         int index = 0;
         // Loop through the four neighbours and add the available ones.
-        for (int i: range) {
-            for (int j: range) {
-                if (isAvailable(i+row) && isAvailable(j+column)) {
-                    returnList[index] = gridToLine(i+row, j+column);
+        int[][] neighbourCoordinates = {{row+1, column}, {row-1,column}, {row, column+1}, {row, column-1}};
+        for (int[] coordinate: neighbourCoordinates) {
+            if (isAvailableCoordinate(coordinate)) {
+                    returnList[index] = coordinate;
                     index += 1;
                 }
             }
-        }
-        // Check the top and bottom cases.
-        if (row == 0) {
-            returnList[index] = top;
-        }
-        if (row == N - 1) {
-            returnList[index] = bottom;
-        }
         return returnList;
     }
 
-    // Check whether x is an available index between 0 and N-1
+    /** Check whether x is an available index between 0 and N-1 */
     private boolean isAvailable(int x) {
         return x < N && x >= 0;
     }
 
-    // Connect two open sites.
-    private void connectSites(int x, int y) {
-        int[][] neighbours = findNeighbours(x);
+    /** Check whether (x, y) is an available coordinate */
+    private boolean isAvailableCoordinate(int[] coordinate) {
+        return isAvailable(coordinate[0]) && isAvailable(coordinate[1]);
     }
 
+    /** Merge site (row, col) with its open neighbours. */
+    private void connectNeighbours(int row, int col) {
+        int[] thisCoordinate = new int[] {row, col};
+        int[][] neighbours = findNeighbours(row, col);
+
+        // Check and merge open neighbours.
+        for (int[] neighbour: neighbours) {
+            if (neighbour != null) {
+                if (isOpen(neighbour[0], neighbour[1])) {
+                    connectSites(thisCoordinate, neighbour);
+                }
+            }
+        }
+    }
+
+    /** Connect two sites.
+     *  Assume they are open.
+     */
+    private void connectSites(int[] site1, int[] site2) {
+        int index1 = gridToLine(site1[0], site1[1]);
+        int index2 = gridToLine(site2[0], site2[1]);
+        trees.union(index1, index2);
+    }
+
+    /** Connect site with top */
+    private void connectToTop(int row,int column) {
+        int index = gridToLine(row, column);
+        trees.union(index, top);
+    }
+
+    /** Connect site with bottom */
+    private void connectToBottom(int row,int column) {
+        int index = gridToLine(row, column);
+        trees.union(index, bottom);
+    }
 
 
 
