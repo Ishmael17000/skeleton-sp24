@@ -8,6 +8,7 @@ public class Percolation {
     public boolean[][] openStatus; // Use a matrix of booleans to store the status.
     public int numOfOpenSites;
     private final WeightedQuickUnionUF trees; // The sorting model.
+    private final WeightedQuickUnionUF treesWithoutBottom;
 
     // The top and bottom sites are virtual, and doesn't engage with neighbours interaction.
     private final int top;
@@ -21,6 +22,7 @@ public class Percolation {
         openStatus = new boolean[N][N];
         numOfOpenSites = 0;
         trees = new WeightedQuickUnionUF(N * N + 2); // N^2 sites plus virtual top and bottom.
+        treesWithoutBottom = new WeightedQuickUnionUF(N * N + 1);
         top = N * N;
         bottom = N * N + 1;
     }
@@ -38,13 +40,15 @@ public class Percolation {
         openStatus[row][col] = true;
 
         // Update the union tree structure.
-        connectNeighbours(row, col);
+        connectNeighbours(row, col, trees);
+        connectNeighbours(row, col, treesWithoutBottom);
         // Special case when dealing virtual top and bottom.
         if (row == 0) {
-            connectToTop(row, col);
+            connectToTop(row, col, trees);
+            connectToTop(row, col, treesWithoutBottom);
         }
         if (row == N-1) {
-            connectToBottom(row, col);
+            connectToBottom(row, col, trees);
         }
 
         numOfOpenSites += 1;
@@ -62,7 +66,7 @@ public class Percolation {
     /** Return whether a site is connected to another open site at the top. */
     public boolean isFull(int row, int col) {
         int thisOrdinal = gridToLine(row, col);
-        return trees.connected(thisOrdinal, top);
+        return treesWithoutBottom.connected(thisOrdinal, top);
 
     }
 
@@ -108,7 +112,7 @@ public class Percolation {
     }
 
     /** Merge site (row, col) with its open neighbours. */
-    private void connectNeighbours(int row, int col) {
+    private void connectNeighbours(int row, int col, WeightedQuickUnionUF someTrees) {
         int[] thisCoordinate = new int[] {row, col};
         int[][] neighbours = findNeighbours(row, col);
 
@@ -116,7 +120,7 @@ public class Percolation {
         for (int[] neighbour: neighbours) {
             if (neighbour != null) {
                 if (isOpen(neighbour[0], neighbour[1])) {
-                    connectSites(thisCoordinate, neighbour);
+                    connectSites(thisCoordinate, neighbour, someTrees);
                 }
             }
         }
@@ -125,22 +129,22 @@ public class Percolation {
     /** Connect two sites.
      *  Assume they are open.
      */
-    private void connectSites(int[] site1, int[] site2) {
+    private void connectSites(int[] site1, int[] site2, WeightedQuickUnionUF someTrees) {
         int index1 = gridToLine(site1[0], site1[1]);
         int index2 = gridToLine(site2[0], site2[1]);
-        trees.union(index1, index2);
+        someTrees.union(index1, index2);
     }
 
     /** Connect site with top */
-    private void connectToTop(int row,int column) {
+    private void connectToTop(int row,int column, WeightedQuickUnionUF someTrees) {
         int index = gridToLine(row, column);
-        trees.union(index, top);
+        someTrees.union(index, top);
     }
 
     /** Connect site with bottom */
-    private void connectToBottom(int row,int column) {
+    private void connectToBottom(int row,int column, WeightedQuickUnionUF someTrees) {
         int index = gridToLine(row, column);
-        trees.union(index, bottom);
+        someTrees.union(index, bottom);
     }
 
 
