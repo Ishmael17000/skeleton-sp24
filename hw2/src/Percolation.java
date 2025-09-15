@@ -32,6 +32,9 @@ public class Percolation {
             throw new java.lang.IndexOutOfBoundsException();
         }
         // Change the state in storage.
+        if (isOpen(row, col)) {
+            return;
+        }
         openStatus[row][col] = true;
 
         // Update the union tree structure.
