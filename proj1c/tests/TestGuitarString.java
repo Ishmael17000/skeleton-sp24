@@ -17,7 +17,7 @@ public class TestGuitarString  {
         double CONCERT_A = 440.0;
         GuitarString aString = new GuitarString(CONCERT_A);
         aString.pluck();
-        for (int i = 0; i < 50000; i += 1) {
+        for (int i = 0; i < 30000; i += 1) {
             StdAudio.play(aString.sample());
             aString.tic();
         }
