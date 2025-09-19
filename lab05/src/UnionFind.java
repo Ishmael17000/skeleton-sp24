@@ -58,15 +58,9 @@ public class UnionFind {
 
         // Iteratively search the root.
         int root = v;
-        List<Integer> compressedItems = new LinkedList<>();
         while (parent(root) >= 0) {
-            compressedItems.addFirst(root);
+            setParent(root, parent(root));
             root = parent(root);
-        }
-
-        // Path-compression
-        for (int x : compressedItems) {
-            nodeList[x] = root;
         }
         return root;
     }
@@ -95,7 +89,12 @@ public class UnionFind {
     // Do the union operation, and update the size. Assume both are roots.
     private void unionUpdate(int root, int child) {
         nodeList[root] += nodeList[child];
-        nodeList[child] = root;
+        setParent(child, root);
+    }
+
+    // Set the parent of a to b
+    private void setParent(int a, int b) {
+        nodeList[a] = b;
     }
 
 }
