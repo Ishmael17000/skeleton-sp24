@@ -86,6 +86,32 @@ public class UnionFindTest {
      * of all methods in your implementation.
      */
 
+    @Test
+    // Test the sizeOf method.
+    public void sizeOfTest() {
+        UnionFind uf = new UnionFind(4);
+        uf.union(1, 2);
+        assertThat(uf.sizeOf(1)).isEqualTo(2);
+        assertThat(uf.sizeOf(0)).isEqualTo(1);
+    }
+
+    @Test
+    // Test the connected method.
+    public void connectedTest() {
+        UnionFind uf = new UnionFind(4);
+        uf.union(1, 2);
+        assertThat(uf.connected(1, 2)).isTrue();
+        assertThat(uf.connected(1,0)).isFalse();
+    }
+
+    @Test
+    // Test the getVariety method.
+    public void getVarietyTest() {
+        UnionFind uf = new UnionFind(4);
+        assertThat(uf.getVariety()).isEqualTo(4);
+        uf.union(1, 2);
+        assertThat(uf.getVariety()).isEqualTo(3);
+    }
 }
 
 
