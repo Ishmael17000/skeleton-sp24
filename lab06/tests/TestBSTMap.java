@@ -1,6 +1,8 @@
 import static org.junit.Assert.*;
 import org.junit.Test;
 
+import java.util.Set;
+
 import static com.google.common.truth.Truth.assertThat;
 
 /** Tests by Brendan Hu, Spring 2015, revised for 2016 by Josh Hug and for 2023 by Noah Adhikari */
@@ -114,4 +116,31 @@ public class TestBSTMap {
         assertThat(b.get("b")).isEqualTo("provolone");
     }
 
+    @Test
+    public void iteratorTest() {
+        BSTMap<String, String> b = new BSTMap<>();
+        b.put("d", "parmesan");
+        b.put("a", "mozzarella");
+        b.put("c", "swiss");
+        b.put("b", "pepper jack");
+        b.put("e", "gouda");
+
+        for (String x : b) {
+            System.out.println(x);
+        }
+    }
+
+    @Test
+    public void setTest() {
+        BSTMap<String, String> b = new BSTMap<>();
+        b.put("d", "parmesan");
+        b.put("a", "mozzarella");
+        b.put("c", "swiss");
+        b.put("b", "pepper jack");
+        b.put("e", "gouda");
+
+        Set<String> set = b.keySet();
+        assertThat(set.contains("b")).isTrue();
+        assertThat(set.contains("f")).isFalse();
+    }
 }
