@@ -1,6 +1,9 @@
 package ngrams;
 
+import java.sql.Time;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -31,6 +34,13 @@ public class TimeSeries extends TreeMap<Integer, Double> {
     public TimeSeries(TimeSeries ts, int startYear, int endYear) {
         super();
         // TODO: Fill in this constructor.
+        for (Map.Entry<Integer, Double> entry : ts.entrySet()) {
+            int year = entry.getKey();
+            if (year >= MIN_YEAR && year <= MAX_YEAR) {
+                double value = entry.getValue();
+                this.put(year, value);
+            }
+        }
     }
 
     /**
@@ -38,7 +48,7 @@ public class TimeSeries extends TreeMap<Integer, Double> {
      */
     public List<Integer> years() {
         // TODO: Fill in this method.
-        return null;
+        return new ArrayList<>(this.keySet());
     }
 
     /**
@@ -47,7 +57,11 @@ public class TimeSeries extends TreeMap<Integer, Double> {
      */
     public List<Double> data() {
         // TODO: Fill in this method.
-        return null;
+        ArrayList<Double> rtnList = new ArrayList<>();
+        for (int k : years()) {
+            rtnList.addLast(get(k));
+        }
+        return rtnList;
     }
 
     /**
@@ -61,7 +75,16 @@ public class TimeSeries extends TreeMap<Integer, Double> {
      */
     public TimeSeries plus(TimeSeries ts) {
         // TODO: Fill in this method.
-        return null;
+        TimeSeries sumSeries = (TimeSeries) this.clone();
+        for (int key : ts.keySet()) {
+            if (sumSeries.containsKey(key)) {
+                double sum = this.get(key) + ts.get(key);
+                sumSeries.replace(key, sum);
+            } else {
+                sumSeries.put(key, ts.get(key));
+            }
+        }
+        return sumSeries;
     }
 
     /**
