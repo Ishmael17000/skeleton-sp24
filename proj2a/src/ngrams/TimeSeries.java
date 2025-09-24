@@ -98,7 +98,16 @@ public class TimeSeries extends TreeMap<Integer, Double> {
      */
     public TimeSeries dividedBy(TimeSeries ts) {
         // TODO: Fill in this method.
-        return null;
+        TimeSeries quotientSeries = new TimeSeries();
+        for (int k : this.keySet()) {
+            if (!ts.containsKey(k)) {
+                throw new IllegalArgumentException("Missing the divisor year");
+            } else {
+                double val = this.get(k) / ts.get(k);
+                quotientSeries.put(k, val);
+            }
+        }
+        return quotientSeries;
     }
 
     // TODO: Add any private helper methods.

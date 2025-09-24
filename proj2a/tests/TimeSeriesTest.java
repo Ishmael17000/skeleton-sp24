@@ -2,6 +2,7 @@ import ngrams.TimeSeries;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,5 +55,37 @@ public class TimeSeriesTest {
 
         assertThat(totalPopulation.years()).isEmpty();
         assertThat(totalPopulation.data()).isEmpty();
+    }
+
+    @Test
+    public void divideByTest() {
+        TimeSeries catPopulation = new TimeSeries();
+        catPopulation.put(1991, 0.0);
+        catPopulation.put(1992, 100.0);
+        catPopulation.put(1994, 200.0);
+
+        TimeSeries dogPopulation = new TimeSeries();
+        dogPopulation.put(1991, 30.0);
+        dogPopulation.put(1992, 40.0);
+        dogPopulation.put(1994, 400.0);
+        dogPopulation.put(1995, 500.0);
+
+        TimeSeries catDogQuotient = catPopulation.dividedBy(dogPopulation);
+        assertThat(catDogQuotient.containsKey(1995)).isFalse();
+
+        assertThat(catDogQuotient.get(1991)).isWithin(1E-10).of(0.0);
+        assertThat(catDogQuotient.get(1992)).isWithin(1E-10).of(100.0 / 40.0);
+        assertThat(catDogQuotient.get(1994)).isWithin(1E-10).of(200.0 / 400.0);
+    }
+
+    @Test
+    public void yearDataOrderTest() {
+        TimeSeries catPopulation = new TimeSeries();
+        catPopulation.put(1991, 0.0);
+        catPopulation.put(1992, 100.0);
+        catPopulation.put(1994, 200.0);
+
+        System.out.println(catPopulation.years());
+        System.out.println(catPopulation.data());
     }
 } 
