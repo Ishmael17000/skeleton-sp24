@@ -1,6 +1,11 @@
 package ngrams;
 
+import edu.princeton.cs.algs4.In;
+
+import java.sql.Time;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.TreeMap;
 
 import static ngrams.TimeSeries.MAX_YEAR;
 import static ngrams.TimeSeries.MIN_YEAR;
@@ -17,13 +22,15 @@ import static ngrams.TimeSeries.MIN_YEAR;
  */
 public class NGramMap {
 
-    // TODO: Add any necessary static/instance variables.
+    private final WordMap wordMap;
+    private final YearMap yearMap;
 
     /**
      * Constructs an NGramMap from WORDSFILENAME and COUNTSFILENAME.
      */
     public NGramMap(String wordsFilename, String countsFilename) {
-        // TODO: Fill in this constructor. See the "NGramMap Tips" section of the spec for help.
+        wordMap = new WordMap(wordsFilename);
+        yearMap = new YearMap(countsFilename);
     }
 
     /**
@@ -34,8 +41,14 @@ public class NGramMap {
      * returns an empty TimeSeries.
      */
     public TimeSeries countHistory(String word, int startYear, int endYear) {
-        // TODO: Fill in this method.
-        return null;
+        TimeSeries rtnSeries = new TimeSeries();
+        TimeSeries wordSeries = wordMap.get(word);
+        for (int year : wordSeries.years()) {
+            if (year >= startYear && year <= endYear) {
+                rtnSeries.put(year, wordSeries.get(year));
+            }
+        }
+        return rtnSeries;
     }
 
     /**
@@ -45,16 +58,18 @@ public class NGramMap {
      * is not in the data files, returns an empty TimeSeries.
      */
     public TimeSeries countHistory(String word) {
-        // TODO: Fill in this method.
-        return null;
+        return countHistory(word, -1, Integer.MAX_VALUE);
     }
 
     /**
      * Returns a defensive copy of the total number of words recorded per year in all volumes.
      */
     public TimeSeries totalCountHistory() {
-        // TODO: Fill in this method.
-        return null;
+        TimeSeries rtnSeries = new TimeSeries();
+        for (int year : yearMap.keySet()) {
+            rtnSeries.put(year, yearMap.get(year));
+        }
+        return rtnSeries;
     }
 
     /**
@@ -63,8 +78,13 @@ public class NGramMap {
      * TimeSeries.
      */
     public TimeSeries weightHistory(String word, int startYear, int endYear) {
-        // TODO: Fill in this method.
-        return null;
+        if (!wordMap.containsKey(word)) {
+            return new TimeSeries();
+        }
+        TimeSeries totalCount = new TimeSeries(yearMap, startYear, endYear);
+        TimeSeries wordAllTime = (TimeSeries) wordMap.get(word).clone();
+        TimeSeries wordSelectedTime = new TimeSeries(wordAllTime, startYear, endYear);
+        return wordSelectedTime.dividedBy(totalCount);
     }
 
     /**
@@ -73,8 +93,12 @@ public class NGramMap {
      * TimeSeries.
      */
     public TimeSeries weightHistory(String word) {
-        // TODO: Fill in this method.
-        return null;
+        if (!wordMap.containsKey(word)) {
+            return new TimeSeries();
+        }
+        TimeSeries totalCount = (TimeSeries) yearMap.clone();
+        TimeSeries wordCount = (TimeSeries) wordMap.get(word).clone();
+        return wordCount.dividedBy(totalCount);
     }
 
     /**
@@ -84,8 +108,14 @@ public class NGramMap {
      */
     public TimeSeries summedWeightHistory(Collection<String> words,
                                           int startYear, int endYear) {
-        // TODO: Fill in this method.
-        return null;
+        TimeSeries totalWordsCount = new TimeSeries();
+        for (String word : words) {
+            TimeSeries currentWordSeriesRestricted = new TimeSeries(wordMap.get(word), startYear, endYear);
+            totalWordsCount = totalWordsCount.plus(currentWordSeriesRestricted);
+        }
+
+        TimeSeries yearCount = (TimeSeries) yearMap.clone();
+        return totalWordsCount.dividedBy(yearCount);
     }
 
     /**
@@ -93,10 +123,81 @@ public class NGramMap {
      * exist in this time frame, ignore it rather than throwing an exception.
      */
     public TimeSeries summedWeightHistory(Collection<String> words) {
-        // TODO: Fill in this method.
-        return null;
+        return summedWeightHistory(words, -1, Integer.MAX_VALUE);
     }
 
-    // TODO: Add any private helper methods.
-    // TODO: Remove all TODO comments before submitting.
+
+    // Stores data of wordwise TimeSeries.
+    private class WordMap extends HashMap<String, TimeSeries> {
+        private WordMap(String wordsFilename) {
+            super();
+            createFromFiles(wordsFilename);
+        }
+
+        // Add the words data from wordsFilename to the WordMap.
+        private void createFromFiles(String wordsFilename) {
+            In wordsFile = new In(wordsFilename);
+
+            while (!wordsFile.isEmpty()) {
+                String nextLine = wordsFile.readLine();
+                String[] splitLine = nextLine.split("\t");
+                String word = splitLine[0];
+                int year = Integer.parseInt(splitLine[1]);
+                int count = Integer.parseInt(splitLine[2]);
+
+                // Add a pair of data.
+                this.addYear(word, year, count);
+            }
+        }
+
+
+        // Add a pair of (year, count) to the TimeSeries of word.
+        private void addYear(String word, int year, int count) {
+            if (!this.containsKey(word)) {
+                this.put(word, new TimeSeries());
+            }
+            this.get(word).put(year, (double)count);
+        }
+    }
+
+    // Store the total year statistics.
+    private class YearMap extends TimeSeries {
+
+        private YearMap(String countsFilename) {
+            super();
+            createFromFiles(countsFilename);
+        }
+
+        // Add yearwise data from file;
+        private void createFromFiles(String countsFilename) {
+            In countsFile = new In(countsFilename);
+
+            while (!countsFile.isEmpty()) {
+                String nextLine = countsFile.readLine();
+                String[] splitLine = nextLine.split(",");
+
+                int year = Integer.parseInt(splitLine[0]);
+                double count = Double.parseDouble(splitLine[1]);
+                addYear(year, count);
+            }
+        }
+
+        // Add a pair (year, count) to the HashMap.
+        private void addYear(int year, double count) {
+            this.put(year, count);
+        }
+    }
+
+    // Convert a string of integer to int.
+//    private int stringToInt(String s) {
+//        int total = 0;
+//        int index = 0;
+//        int l = s.length();
+//        while (index < l) {
+//            int num = s.charAt(index);
+//            total = 10 * total + num;
+//            index += 1;
+//        }
+//        return total;
+//    }
 }

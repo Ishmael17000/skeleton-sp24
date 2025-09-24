@@ -3,6 +3,7 @@ import ngrams.TimeSeries;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,4 +74,46 @@ public class NGramMapTest {
         assertThat(fishPlusDogWeight.get(1865)).isWithin(1E-10).of(expectedFishPlusDogWeight1865);
     }
 
+    @Test
+    public void basicTest() {
+        NGramMap ngm = new NGramMap(SHORT_WORDS_FILE, TOTAL_COUNTS_FILE);
+        TimeSeries request2005to2008 = ngm.countHistory("request");
+        System.out.println(request2005to2008.years());
+    }
+
+    @Test
+    public void simpleTotalCountHistoryTest() {
+        NGramMap ngm = new NGramMap(SHORT_WORDS_FILE, TOTAL_COUNTS_FILE);
+        TimeSeries totalCounts = ngm.totalCountHistory();
+        assertThat(totalCounts.get(1865)).isWithin(1E-10).of(2563919231.0);
+    }
+
+    @Test
+    public void weightHistoryTest() {
+        NGramMap ngm = new NGramMap(SHORT_WORDS_FILE, TOTAL_COUNTS_FILE);
+        TimeSeries weightSeries = ngm.weightHistory("airport", 2007, 2008);
+        assertThat(weightSeries.get(2007)).isWithin(1E-10).of(175702/28307904288.0);
+
+        TimeSeries weightSeries2 = ngm.weightHistory("request");
+        assertThat(weightSeries2.get(2008)).isWithin(1E-10).of(795265/28752030034.0);
+    }
+
+    @Test
+    public void emptyWeightHistoryTest() {
+        NGramMap ngm = new NGramMap(SHORT_WORDS_FILE, TOTAL_COUNTS_FILE);
+        TimeSeries weightSeries = ngm.weightHistory("whatisthis???", 2007, 2008);
+        assertThat(weightSeries).isEmpty();
+    }
+
+    @Test
+    public void summedWeightHistoryTest() {
+        NGramMap ngm = new NGramMap(SHORT_WORDS_FILE, TOTAL_COUNTS_FILE);
+        List<String> words = new ArrayList<>();
+        words.add("airport");
+        words.add("request");
+        words.add("wandered");
+        TimeSeries weightSeries = ngm.summedWeightHistory(words, 2005, 2008);
+        assertThat(weightSeries.get(2005)).isWithin(1E-10).of((646179+83769)/26609986084.0);
+        assertThat(weightSeries.get(2008)).isWithin(1E-10).of((173294+795265+171015)/28752030034.0);
+    }
 }  

@@ -74,7 +74,6 @@ public class TimeSeries extends TreeMap<Integer, Double> {
      * should store the value from the TimeSeries that contains that year.
      */
     public TimeSeries plus(TimeSeries ts) {
-        // TODO: Fill in this method.
         TimeSeries sumSeries = (TimeSeries) this.clone();
         for (int key : ts.keySet()) {
             if (sumSeries.containsKey(key)) {
