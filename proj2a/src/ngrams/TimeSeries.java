@@ -36,7 +36,7 @@ public class TimeSeries extends TreeMap<Integer, Double> {
         // TODO: Fill in this constructor.
         for (Map.Entry<Integer, Double> entry : ts.entrySet()) {
             int year = entry.getKey();
-            if (year >= MIN_YEAR && year <= MAX_YEAR) {
+            if (year >= startYear && year <= endYear) {
                 double value = entry.getValue();
                 this.put(year, value);
             }
