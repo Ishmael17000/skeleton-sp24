@@ -1,6 +1,8 @@
 package hashmap;
 
 import static org.junit.Assert.*;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -70,5 +72,23 @@ public class TestMyHashMapExtra {
         Set<String> keySet = b.keySet();
         assertThat(values).containsExactlyElementsIn(keySet);
         assertThat(keySet).containsExactlyElementsIn(values);
+    }
+
+    @Test
+    public void iteratorTest() {
+        MyHashMap<String, Integer> b = new MyHashMap<>();
+
+        for (int i=0; i<100; i++) {
+            b.put("hi"+i, i);
+        }
+
+
+        int count = 0;
+        for (String s : b) {
+            // System.out.println(s);
+            count += 1;
+        }
+
+        assertThat(count).isEqualTo(100);
     }
 }
