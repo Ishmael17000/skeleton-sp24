@@ -1,0 +1,20 @@
+Insert In Order            N=1000        N=10,000      N=100,000        N=1,000,000
+ULLMap                      0.01          0.51         SOF               SOF
+MyHashMap                   0.00          0.02         0.06              0.55
+Built-in HashMap            0.00          0.01         0.04              0.38
+
+
+L=10
+Insert Randomly            N=1000        N=10,000      N=100,000        N=1,000,000
+ULLMap                      0.01          0.24         SOF               SOF
+MyHashMap                   0.01          0.01         0.08              0.89
+Built-in HashMap            0.00          0.00         0.02              0.47
+
+
+L=10
+Different Bucket Types     N=1000        N=10,000      N=100,000        N=1,000,000        N=10,000,000
+ArrayList                   0.00          0.01          0.11             1.21               13.69
+LinkedList                  0.00          0.01          0.10             1.28               13.30
+HashSet                     0.01          0.01          0.14             1.68               20.70
+Stack                       0.00          0.01          0.13             1.39               18.62
+ArrayDeque                  0.00          0.01          0.13             1.51               18.73
