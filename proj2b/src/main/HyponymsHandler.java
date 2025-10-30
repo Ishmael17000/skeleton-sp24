@@ -22,10 +22,8 @@ public class HyponymsHandler extends NgordnetQueryHandler {
     public String handle(NgordnetQuery q) {
         // Suppose for now q is a single word.
         List<String> words = q.words();
-        for (String word : words) {
-
-        }
-        return "Hello";
+        Set<String> hyponyms = wordNetGraph.findCommonHyponyms(words);
+        return printHyponyms(hyponyms);
     }
 
 
@@ -47,6 +45,16 @@ public class HyponymsHandler extends NgordnetQueryHandler {
     private Set<String> stringToSynset(String s) {
         String[] words = s.split(" ");
         return new HashSet<>(Arrays.asList(words));
+    }
+
+    private String printHyponyms(Set<String> words) {
+        StringBuilder result = new StringBuilder("[");
+        for (String word : words) {
+            result.append(word).append(", ");
+        }
+        result.delete(result.length()-2, result.length());
+        result.append("]");
+        return result.toString();
     }
 
 

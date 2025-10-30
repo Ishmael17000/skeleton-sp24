@@ -24,6 +24,7 @@ public class WordNetGraph {
         this.size = 0;
         this.insertPointer = 0;
         this.synsetIndex = new HashMap<>();
+        this.indexSynset = new HashMap<>();
         this.adjacencyList = new HashMap<>();
         this.parentList = new HashMap<>();
         this.synsetContents = synsetContents;
@@ -75,7 +76,17 @@ public class WordNetGraph {
 
     /** Return the set of children of v. Use BFS. */
     private Set<Integer> getAllChildren(Integer v) {
-        throw new NotImplementedException();
+        return getChildrenHelper(v, new HashSet<>());
+    }
+
+    private Set<Integer> getChildrenHelper(Integer v, Set<Integer> nodes) {
+        nodes.add(v);
+        if (hasChildren(v)) {
+            for (int node : verticesFrom(v)) {
+                getChildrenHelper(node, nodes);
+            }
+        }
+        return nodes;
     }
 
     /** Return the union of children of all node in nodes. */
@@ -115,6 +126,18 @@ public class WordNetGraph {
         List<Integer> nodes = nodesContainingWord(word);
         Set<Integer> allChildren = getAllChildren(nodes);
         return getWordFromSetOfNodes(allChildren);
+    }
+
+    public Set<String> findCommonHyponyms(List<String> words) {
+        Set<String> hyponyms = new TreeSet<>();
+        for (String word : words) {
+            hyponyms.addAll(findHyponyms(word));
+        }
+        return hyponyms;
+    }
+
+    private boolean hasChildren(int node) {
+        return !adjacencyList.get(node).isEmpty();
     }
 
 
