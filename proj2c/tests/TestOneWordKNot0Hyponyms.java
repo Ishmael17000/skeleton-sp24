@@ -17,7 +17,7 @@ public class TestOneWordKNot0Hyponyms {
     @Test
     public void testActKNot0() {
         NgordnetQueryHandler studentHandler = AutograderBuddy.getHyponymsHandler(
-                WORDS_FILE, TOTAL_COUNTS_FILE, SMALL_SYNSET_FILE, SMALL_HYPONYM_FILE);
+                SMALL_SYNSET_FILE, SMALL_HYPONYM_FILE, WORDS_FILE, TOTAL_COUNTS_FILE);
         List<String> words = List.of("CS61A");
 
         NgordnetQuery nq = new NgordnetQuery(words, 2010, 2020, 4, NgordnetQueryType.HYPONYMS);
