@@ -1,96 +1,100 @@
 package main;
 
-import org.apache.commons.lang3.NotImplementedException;
-
-import java.lang.classfile.constantpool.IntegerEntry;
 import java.util.*;
 
 public class WordNetGraph {
-    /*
-        The graph uses adjacency list as its underlying data structure.
-        The nodes are represented as a list of integers, with a Map<Integer, Integer> specifying
-        which synset is contained in a node.
-        Each synset is represented as an integer. The map wordIndex specifies the words corresponding to the integers.
+
+    private int size;
+    private int edgeSize;
+    private final Map<Integer, Set<Integer>> childrenMap; // Store the children of vertices.
+    private final Map<Integer, Set<Integer>> parentMap; // Store the parents of vertices.
 
 
-        The information of wordIndex and graph topology are given in by two files. The synsets are processed in advance.
-        When initializing a WordNetGraph, the wordIndex should be passed in as a map. In the HyponymsHandler, we read the
-        other file (namely hyponyms) and pass in the graph topology.
+    /** Initialize an empty graph.
+     *  childrenMap: Assign each node to its children.
+     *  parentMap: Assign each node to its parents. */
 
-     */
-
-    /** Initialize an empty graph. */
-    public WordNetGraph(Map<Integer, Set<String>> synsetContents) {
+    public WordNetGraph() {
         this.size = 0;
-        this.insertPointer = 0;
-        this.synsetIndex = new HashMap<>();
-        this.indexSynset = new HashMap<>();
-        this.adjacencyList = new HashMap<>();
-        this.parentList = new HashMap<>();
-        this.synsetContents = synsetContents;
+        this.edgeSize = 0;
+        this.childrenMap = new HashMap<>();
+        this.parentMap = new HashMap<>();
     }
 
 
-    /** Add a node containing the giving words (represented by synset index). */
-    public void addNode(int index) {
-        if (!contains(index)) {
-            synsetIndex.put(index, insertPointer);
-            indexSynset.put(insertPointer, index);
-            adjacencyList.put(index, new HashSet<>());
-            parentList.put(index, new HashSet<>());
-            insertPointer += 1;
-            size += 1;
+    /** Add a node to the graph. */
+    public void addNode(int synset) {
+        if (contains(synset)) {
+            System.out.println("Insertion " + synset + " failed. Node already exists.");
+            return;
         }
+        childrenMap.put(synset, new HashSet<>());
+        parentMap.put(synset, new HashSet<>());
+        size += 1;
     }
 
 
     /** Add an edge pointing from v to w. */
-    public void addEdge(int vIndex, int wIndex) {
-        if (!contains(vIndex) || !contains(wIndex)) {
-            throw new NoSuchElementException("Two existing vertices are required");
+    public void addEdge(int v, int w) {
+        if (!contains(v) || !contains(w)) {
+            System.out.println("Fail to connect " + v + "to " + w + ". Both nodes must exist");
+            return;
         }
-        adjacencyList.get(vIndex).add(wIndex);
-        parentList.get(wIndex).add(vIndex);
+        if (!connectsTo(v, w)) {
+            edgeSize += 1;
+            childrenMap.get(v).add(w);
+            parentMap.get(w).add(v);
+        } else {
+            System.out.println(v + " is already connected to " + w + ".");
+        }
     }
 
 
-    /** Return all the vertices v is pointing to. */
-    public Iterable<Integer> verticesFrom(int v) {
-        return adjacencyList.get(v);
+    /** Return the set of nodes. */
+    public Set<Integer> nodes() {
+        return childrenMap.keySet();
     }
 
-    /** Return all the vertices pointing at v. */
-    public Iterable<Integer> verticesTo(int v) {
-        return parentList.get(v);
+    /** Return whether the graph contains the node. */
+    public boolean contains(int synset) {
+        return nodes().contains(synset);
+    }
+
+    /** Return whether the node has children. */
+    public boolean hasChildren(int node) {
+        return !childrenMap.get(node).isEmpty();
+    }
+
+    /** Return whether there is an edge from node1 to node2. */
+    public boolean connectsTo(int node1, int node2) {
+        return (contains(node1) && childrenMap.get(node1).contains(node2));
     }
 
 
-    /** Return whether the graph contains a node of the synset. */
-    public boolean contains(int index) {
-        return synsetIndex.containsValue(index);
+    /** Return all the children of v. */
+    public Set<Integer> childrenOf(int v) {
+        return childrenMap.get(v);
     }
 
-    public int getSize() {
+    /** Return all the parents of v. */
+    public Set<Integer> parentOf(int v) {
+        return parentMap.get(v);
+    }
+
+
+    /** Return the number of nodes in the graph. */
+    public int size() {
         return size;
     }
 
-    /** Return the set of children of v. Use BFS. */
-    private Set<Integer> getAllChildren(Integer v) {
-        return getChildrenHelper(v, new HashSet<>());
+    /** Return all nodes that are inferior to the node. Use some graph traversal (in particular, DFS). */
+    public Set<Integer> getAllChildren(int synset) {
+        return getChildrenHelper(synset, new HashSet<>());
     }
 
-    private Set<Integer> getChildrenHelper(Integer v, Set<Integer> nodes) {
-        nodes.add(v);
-        if (hasChildren(v)) {
-            for (int node : verticesFrom(v)) {
-                getChildrenHelper(node, nodes);
-            }
-        }
-        return nodes;
-    }
 
-    /** Return the union of children of all node in nodes. */
-    private Set<Integer> getAllChildren(List<Integer> nodes) {
+    /** Return the (non-repeating) union of inferiors of all node in the list. */
+    public Set<Integer> getAllChildren(List<Integer> nodes) {
         Set<Integer> children = new HashSet<>();
         for (int node : nodes) {
             Set<Integer> currentChildren = getAllChildren(node);
@@ -99,55 +103,32 @@ public class WordNetGraph {
         return children;
     }
 
-    /** Given a list of synset indexes, return the set of non-repeating words contained in it. */
-    private Set<String> getWordFromSetOfNodes(Set<Integer> nodes) {
-        Set<String> words = new HashSet<>();
-        for (int node : nodes) {
-            int synset = indexSynset.get(node);
-            Set<String> synsetContent = synsetContents.get(synset);
-            words.addAll(synsetContent);
-        }
-        return words;
-    }
 
-    /** Returns a list of graph node indexes whose corresponding synset contains word. */
-    private List<Integer> nodesContainingWord(String word) {
-        List<Integer> nodeList = new ArrayList<>();
-        for (int node : synsetIndex.keySet()) {
-            if (synsetContents.get(node).contains(word)) {
-                nodeList.add(synsetIndex.get(node));
+
+
+
+
+
+    /** Show all the parent-children pairs of the graph. */
+    public void printGraph() {
+        for (int vertice : childrenMap.keySet()) {
+            for (int children : childrenOf(vertice)) {
+                System.out.println(vertice + "->" + children);
             }
         }
-        return nodeList;
     }
 
-    /** Find all hyponyms of a word */
-    public Set<String> findHyponyms(String word) {
-        List<Integer> nodes = nodesContainingWord(word);
-        Set<Integer> allChildren = getAllChildren(nodes);
-        return getWordFromSetOfNodes(allChildren);
-    }
 
-    public Set<String> findCommonHyponyms(List<String> words) {
-        Set<String> hyponyms = new TreeSet<>();
-        for (String word : words) {
-            hyponyms.addAll(findHyponyms(word));
+
+    /** Use DFS to find all the children, children of children etc. of a node. */
+    private Set<Integer> getChildrenHelper(int synset, Set<Integer> nodes) {
+        // Use a set to store nodes and pass them to recursion calls.
+        nodes.add(synset);
+        if (hasChildren(synset)) {
+            for (int node : childrenOf(synset)) {
+                getChildrenHelper(node, nodes);
+            }
         }
-        return hyponyms;
+        return nodes;
     }
-
-    private boolean hasChildren(int node) {
-        return !adjacencyList.get(node).isEmpty();
-    }
-
-
-
-    private Map<Integer, Integer> synsetIndex; // The synset indexes are stored as integers starting from 0.
-    private Map<Integer, Integer> indexSynset;
-    private Map<Integer, HashSet<Integer>> adjacencyList;
-    private int size;
-    private Map<Integer, HashSet<Integer>> parentList; // Store the parents of vertices.
-    private int insertPointer;
-    private final Map<Integer, Set<String>> synsetContents;
-
 }

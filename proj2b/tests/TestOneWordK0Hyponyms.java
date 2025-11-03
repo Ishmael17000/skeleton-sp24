@@ -1,6 +1,7 @@
 import browser.NgordnetQuery;
 import browser.NgordnetQueryHandler;
 import browser.NgordnetQueryType;
+import main.HyponymsHandler;
 import org.junit.jupiter.api.Test;
 import main.AutograderBuddy;
 
@@ -21,7 +22,6 @@ public class TestOneWordK0Hyponyms {
         NgordnetQueryHandler studentHandler = AutograderBuddy.getHyponymsHandler(
                 WORDS_FILE, TOTAL_COUNTS_FILE, SMALL_SYNSET_FILE, SMALL_HYPONYM_FILE);
         List<String> words = List.of("act");
-
         NgordnetQuery nq = new NgordnetQuery(words, 0, 0, 0, NgordnetQueryType.HYPONYMS);
         String actual = studentHandler.handle(nq);
         String expected = "[act, action, change, demotion, human_action, human_activity, variation]";
@@ -29,4 +29,10 @@ public class TestOneWordK0Hyponyms {
     }
 
     // TODO: Add more unit tests (including edge case tests) here.
+
+    @Test
+    public void printGraphTest() {
+        HyponymsHandler myHandler = new HyponymsHandler(SMALL_SYNSET_FILE, SMALL_HYPONYM_FILE);
+        myHandler.printGraph();
+    }
 }
