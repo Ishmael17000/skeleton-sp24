@@ -36,6 +36,9 @@ public class NGramMap {
      * returns an empty TimeSeries.
      */
     public TimeSeries countHistory(String word, int startYear, int endYear) {
+        if (!wordMap.containsKey(word)) {
+            return new TimeSeries();
+        }
         TimeSeries rtnSeries = new TimeSeries();
         TimeSeries wordSeries = wordMap.get(word);
         for (int year : wordSeries.years()) {
@@ -143,7 +146,7 @@ public class NGramMap {
                 String[] splitLine = nextLine.split("\t");
                 String word = splitLine[0];
                 int year = Integer.parseInt(splitLine[1]);
-                int count = Integer.parseInt(splitLine[2]);
+                double count = Double.parseDouble(splitLine[2]);
 
                 // Add a pair of data.
                 this.addYear(word, year, count);
@@ -152,11 +155,11 @@ public class NGramMap {
 
 
         // Add a pair of (year, count) to the TimeSeries of word.
-        private void addYear(String word, int year, int count) {
+        private void addYear(String word, int year, double count) {
             if (!this.containsKey(word)) {
                 this.put(word, new TimeSeries());
             }
-            this.get(word).put(year, (double)count);
+            this.get(word).put(year, count);
         }
     }
 

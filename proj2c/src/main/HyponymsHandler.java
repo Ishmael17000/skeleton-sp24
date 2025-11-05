@@ -2,9 +2,9 @@ package main;
 
 import browser.NgordnetQuery;
 import browser.NgordnetQueryHandler;
+import browser.NgordnetQueryType;
 import edu.princeton.cs.algs4.In;
 import ngrams.NGramMap;
-import ngrams.TimeSeries;
 
 import java.util.*;
 
@@ -38,13 +38,21 @@ public class HyponymsHandler extends NgordnetQueryHandler {
 
 
     @Override
-    /* Handle a request with list of words. Return all of their common hyponyms. */
     public String handle(NgordnetQuery q) {
+        NgordnetQueryType type = q.ngordnetQueryType();
+
+        if (type == NgordnetQueryType.HYPONYMS) { return handleHyponyms(q); }
+        else if (type == NgordnetQueryType.ANCESTORS) { return handleCommonAncestors(q); }
+        else { return "[]"; }
+    }
+
+
+    private String handleHyponyms(NgordnetQuery q) {
         List<String> words = q.words();
+        if (words.isEmpty()) { return "[]"; }
         int startYear = q.startYear(); // Default is 1900.
         int endYear = q.endYear(); // Default is 2020.
-        int k = q.k(); // Default is 0.
-
+        int k = q.k();
 
         List<Set<String>> wordSets = new ArrayList<>();
         for (String word : words) {
@@ -53,13 +61,40 @@ public class HyponymsHandler extends NgordnetQueryHandler {
         Set<String> hyponyms = findIntersection(wordSets);
 
         if (k == 0) {
-            return printHyponyms(hyponyms);
+            return printWords(hyponyms);
         }
 
         else {
             List<String> wordList = new ArrayList<>(hyponyms);
             wordList.sort(new TimeSeriesCountComparator(ngm, startYear, endYear));
-            return printHyponyms(getTopK(wordList, k, startYear, endYear));
+            List<String> topKList = getTopK(wordList, k, startYear, endYear);
+            topKList.sort(null);
+            return printWords(topKList);
+        }
+    }
+
+    private String handleCommonAncestors(NgordnetQuery q) {
+        List<String> words = q.words();
+        if (words.isEmpty()) { return "[]"; }
+        int startYear = q.startYear(); // Default is 1900.
+        int endYear = q.endYear(); // Default is 2020.
+        int k = q.k();
+
+        List<Set<String>> wordSets = new ArrayList<>();
+        for (String word : words) {
+            wordSets.add(findHypernyms(word));
+        }
+        Set<String> hypernyms = findIntersection(wordSets);
+
+        if (k == 0) {
+            return printWords(hypernyms);
+        }
+        else {
+            List<String> wordList = new ArrayList<>(hypernyms);
+            wordList.sort(new TimeSeriesCountComparator(ngm, startYear, endYear));
+            List<String> topKList = getTopK(wordList, k, startYear, endYear);
+            topKList.sort(null);
+            return printWords(topKList);
         }
     }
 
@@ -70,7 +105,10 @@ public class HyponymsHandler extends NgordnetQueryHandler {
 
 
     /** Given the set of hyponyms, return the required string format. */
-    private String printHyponyms(Set<String> words) {
+    private String printWords(Set<String> words) {
+        if (words.isEmpty()) {
+            return "[]";
+        }
         StringBuilder result = new StringBuilder("[");
         for (String word : words) {
             result.append(word).append(", ");
@@ -81,7 +119,7 @@ public class HyponymsHandler extends NgordnetQueryHandler {
     }
 
     /** Given the list of hyponyms, return the required string format. */
-    private String printHyponyms(List<String> words) {
+    private String printWords(List<String> words) {
         if (words.isEmpty()) {
             return "[]";
         }
@@ -136,6 +174,13 @@ public class HyponymsHandler extends NgordnetQueryHandler {
         List<Integer> nodes = nodesContainingWord(word);
         Set<Integer> allChildren = wng.getAllChildren(nodes);
         return getWordFromSetOfNodes(allChildren);
+    }
+
+    /** Find all hypernyms of a word */
+    private Set<String> findHypernyms(String word) {
+        List<Integer> nodes = nodesContainingWord(word);
+        Set<Integer> allParent = wng.getAllParent(nodes);
+        return getWordFromSetOfNodes(allParent);
     }
 
     /** Convert the hyponyms file content to a wng. */
@@ -220,20 +265,17 @@ public class HyponymsHandler extends NgordnetQueryHandler {
             this. endYear = endYear;
         }
 
-        public TimeSeriesCountComparator(NGramMap ngm) {
-            this(ngm, 1900, 2020);
-        }
 
         @Override
         public int compare(String o1, String o2) {
             double count1 = ngm.totalCount(o1, startYear, endYear);
             double count2 = ngm.totalCount(o2, startYear, endYear);
             if (count1 >= count2) {
-                return 1;
+                return -1;
             } else if (count1 == count2) {
                 return 0;
             } else {
-                return -1;
+                return 1;
             }
         }
     }

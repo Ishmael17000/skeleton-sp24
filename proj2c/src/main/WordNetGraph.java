@@ -65,6 +65,9 @@ public class WordNetGraph {
         return !childrenMap.get(node).isEmpty();
     }
 
+    /** Return whether the node has parent. */
+    public boolean hasParent(int node) { return !parentMap.get(node).isEmpty(); }
+
     /** Return whether there is an edge from node1 to node2. */
     public boolean connectsTo(int node1, int node2) {
         return (contains(node1) && childrenMap.get(node1).contains(node2));
@@ -92,6 +95,11 @@ public class WordNetGraph {
         return getChildrenHelper(synset, new HashSet<>());
     }
 
+    /** Return all nodes that are superior to the node. Use some graph traversal (in particular, DFS). */
+    public Set<Integer> getAllParent(int synset) {
+        return getParentHelper(synset, new HashSet<>());
+    }
+
 
     /** Return the (non-repeating) union of inferiors of all node in the list. */
     public Set<Integer> getAllChildren(List<Integer> nodes) {
@@ -102,6 +110,18 @@ public class WordNetGraph {
         }
         return children;
     }
+
+    /** Return the (non-repeating) union of inferiors of all node in the list. */
+    public Set<Integer> getAllParent(List<Integer> nodes) {
+        Set<Integer> parent = new HashSet<>();
+        for (int node : nodes) {
+            Set<Integer> currentParent = getAllParent(node);
+            parent.addAll(currentParent);
+        }
+        return parent;
+    }
+
+
 
 
 
@@ -127,6 +147,18 @@ public class WordNetGraph {
         if (hasChildren(synset)) {
             for (int node : childrenOf(synset)) {
                 getChildrenHelper(node, nodes);
+            }
+        }
+        return nodes;
+    }
+
+    /** Use DFS to find all the parent, parent of parent etc. of a node. */
+    private Set<Integer> getParentHelper(int synset, Set<Integer> nodes) {
+        // Use a set to store nodes and pass them to recursion calls.
+        nodes.add(synset);
+        if (hasParent(synset)) {
+            for (int node : parentOf(synset)) {
+                getParentHelper(node, nodes);
             }
         }
         return nodes;
