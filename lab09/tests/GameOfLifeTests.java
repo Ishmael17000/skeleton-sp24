@@ -2,6 +2,7 @@ import gameoflife.GameOfLife;
 import org.junit.Test;
 import tileengine.TETile;
 import tileengine.Tileset;
+import utils.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -183,6 +184,16 @@ public class GameOfLifeTests {
         TETile[][] loadResult = student.loadBoard(LOAD_TEST);
         checkState(loadResult, result);
     }
+
+    /*
+    @Test
+    public void saveTest() {
+        String saveFileName = "src/save.txt";
+        FileUtils.writeFile(saveFileName, "1 2");
+        FileUtils.writeFile(saveFileName, "4, 5");
+    }
+    */
+
 
     /**
      * This checks if any of the pattern files have been modified. Modifications include

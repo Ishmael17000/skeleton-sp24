@@ -7,6 +7,8 @@ import tileengine.Tileset;
 import utils.FileUtils;
 
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -25,6 +27,11 @@ public class GameOfLife {
     private TETile[][] currentState;
     private int width;
     private int height;
+
+    private final int minThreshold = 2;
+    private final int maxThreshold = 3;
+
+    private final String outputPath = "src/save.txt";
 
     /**
      * Initializes our world.
@@ -237,15 +244,20 @@ public class GameOfLife {
         // The board is filled with Tileset.NOTHING
         fillWithNothing(nextGen);
 
-        // TODO: Implement this method so that the described transitions occur.
-        // TODO: The current state is represented by TETiles[][] tiles and the next
-        // TODO: state/evolution should be returned in TETile[][] nextGen.
-
-
-
-
-        // TODO: Returns the next evolution in TETile[][] nextGen.
-        return null;
+        // Iterate through all the tiles.
+        for (int i  = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                // If the cell is alive, decide whether to keep or kill it.
+                if (isAlive(i, j, tiles)) {
+                    if (validNeighbours(i, j, tiles)) { giveBirth(i, j, nextGen); }
+                    }
+                // If not, decide whether to create a new cell.
+                else {
+                    if (countAliveNeighbours(i, j, tiles) == 3) { giveBirth(i, j, nextGen); }
+                }
+            }
+        }
+        return nextGen;
     }
 
     /**
@@ -266,47 +278,148 @@ public class GameOfLife {
      * 0 represents NOTHING, 1 represents a CELL.
      */
     public void saveBoard() {
-        // TODO: Save the dimensions of the board into the first line of the file.
-        // TODO: The width and height should be separated by a space, and end with "\n".
 
+        if (!FileUtils.fileExists(outputPath)) {
+            throw new RuntimeException("src/save.txt does not exist!");
+        }
 
+        // Save the dimensions of the board into the first line of the file.
+        // Separated by space, ended with \n.
+        StringBuilder content = new StringBuilder(width + " " + height + "\n");
 
-        // TODO: Save the current state of the board into save.txt. You should
-        // TODO: use the provided FileUtils functions to help you. Make sure
-        // TODO: the orientation is correct! Each line in the board should
-        // TODO: end with a new line character.
-
-
-
-
-
+        // Save the board content by line.
+        for (int y = height - 1; y >= 0; y--) {
+            content.append(lineContent(y));
+        }
+        saveIntoFile(outputPath, content.toString());
     }
 
+
+    private String lineContent(int y) {
+        StringBuilder content = new StringBuilder();
+        for (int x = 0; x < width; x++) {
+            if (isAlive(x, y, currentState)) { content.append("1"); }
+            else { content.append("0"); }
+        }
+        content.append("\n");
+        return content.toString();
+    }
     /**
      * Loads the board from filename and returns it in a 2D TETile array.
      * 0 represents NOTHING, 1 represents a CELL.
      */
     public TETile[][] loadBoard(String filename) {
-        // TODO: Read in the file.
+        // Read in the file.
+        String fileContent = readFromFile(filename);
+        String[] contents = fileContent.split("\n");
 
-        // TODO: Split the file based on the new line character.
+        // Split the file based on the new line character.
+        String firstLine = contents[0];
 
-        // TODO: Grab and set the dimensions from the first line.
+        // Grab and set the dimensions from the first line.
+        String[] dimensions = firstLine.split(" ");
+        this.width = Integer.parseInt(dimensions[0]);
+        this.height = Integer.parseInt(dimensions[1]);
 
-        // TODO: Create a TETile[][] to load the board from the file into
-        // TODO: and any additional variables that you think might help.
+        // Create a TETile[][] to load the board from the file into
+        TETile[][] tiles = new TETile[width][height];
 
-
-        // TODO: Load the state of the board from the given filename. You can
-        // TODO: use the provided builder variable to help you and FileUtils
-        // TODO: functions. Make sure the orientation is correct!
-
-
-
-
-        // TODO: Return the board you loaded. Replace/delete this line.
-        return null;
+        // Load the tile contents from the rest of the file.
+        for (int y = height - 1; y >= 0; y--) {
+            String line = contents[height - y]; // height-1 -> 1; 0 -> height.
+            for (int x = 0; x < width; x++) {
+                int index = line.charAt(x);
+                if (index == 1) { giveBirth(x, y, tiles); }
+                else { kill(x, y, tiles); }
+        }
+        }
+        return tiles;
     }
+    
+    /** Return the number of alive neighbours of tile i, j in a tile set. */
+    private int countAliveNeighbours(int i, int j, TETile[][] tiles) {
+        int count = 0;
+        for (TETile tile : neighbours(i, j, tiles)) {
+            if (isAlive(tile)) { count++; }
+        }
+        return count;
+    }
+
+
+    /** Return whether the given tile is alive. In our case, alive just means being a CELL but not NOTHING.*/
+    private boolean isAlive(TETile tile) {
+        return tile == Tileset.CELL;
+    }
+
+
+    /** Return whether the tile at a certain coordinate is alive. */
+    private boolean isAlive(int i, int j, TETile[][] tiles) {
+        return isAlive(tiles[i][j]);
+    }
+
+
+    /** Return the neighbours of the tile at the given coordinate.
+     *  Return as an ArrayList.
+     */
+    private Iterable<TETile> neighbours(int i, int j, TETile[][] tiles) {
+        List<TETile> neighbours = new ArrayList<>();
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x!=0 || y!=0) {
+                    if (withinBoard(i+x, j+y, tiles)) { neighbours.add(tiles[i+x][j+y]); }
+                }
+            }
+        }
+        return neighbours;
+    }
+
+    private boolean withinBoard(int i, int j, TETile[][] tiles) {
+        int h = tiles[0].length;
+        int w = tiles.length;
+        return i >= 0 && i < w && j >= 0 && j < h;
+    }
+
+    /** Return whether a tile at the given coordinate has a valid number of alive neighbours
+     * so that it can survive to the next generation. The number is between minThreshold and
+     * maxThreshold (2 and 3 for now).
+     */
+    private boolean validNeighbours(int i, int j, TETile[][] tiles) {
+        int num = countAliveNeighbours(i, j, tiles);
+        return (num >= minThreshold && num <= maxThreshold);
+    }
+
+    /** Copy the tile at the given coordinate of tilesFrom to tilesTo. */
+    private void copyBlock(int i, int j, TETile[][] tilesFrom, TETile[][] tilesTo) {
+        tilesTo[i][j] = tilesFrom[i][j];
+    }
+
+
+    /** Kill the tile at the given coordinate.
+     *  In our case, this is to set the tile to NOTHING.
+     */
+    private void kill(int i, int j, TETile[][] tiles) {
+        tiles[i][j] = Tileset.NOTHING;
+    }
+
+    /** Set the tile at the given coordinate alive.
+     *  In our case, this is to set the tile to CELL.
+     */
+    private void giveBirth(int i, int j, TETile[][] tiles) {
+        tiles[i][j] = Tileset.CELL;
+    }
+
+    private void saveIntoFile(String file, String content) {
+        FileUtils.writeFile(file, content);
+    }
+
+    private String readFromFile(String file) {
+        return FileUtils.readFile(file);
+    }
+    
+    
+    
+    
+    
 
     /**
      * This is where we run the program. DO NOT MODIFY THIS METHOD!
