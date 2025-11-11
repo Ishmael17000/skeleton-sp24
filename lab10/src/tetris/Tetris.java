@@ -79,32 +79,58 @@ public class Tetris {
     /**
      * Updates the board based on the user input. Makes the appropriate moves
      * depending on the user's input.
+     * Interactivity logic:
+     *      a: move the current piece towards the left by one tile
+     *      s: move the current piece downwards by one tile
+     *      d: move the current piece towards the right by one tile
+     *      q: rotate the current piece to the left 90 degrees
+     *      w: rotate the current piece to the right 90 degrees
      */
     private void updateBoard() {
         // Grabs the current piece.
         Tetromino t = currentTetromino;
-        if (actionDeltaTime() > 1000) {
+        if (actionDeltaTime() > 500) {
             movement.dropDown();
             resetActionTimer();
             Tetromino.draw(t, board, t.pos.x, t.pos.y);
             return;
         }
 
-        // TODO: Implement interactivity, so the user is able to input the keystrokes to move
-        //  the tile and rotate the tile. You'll want to use some provided helper methods here.
-
-
-        Tetromino.draw(t, board, t.pos.x, t.pos.y);
+        if (StdDraw.hasNextKeyTyped()) {
+            char userInput = StdDraw.nextKeyTyped();
+            switch (userInput) {
+                case 'a': movement.tryMove(-1, 0);
+                    break;
+                case 's': movement.dropDown();
+                    break;
+                case 'd': movement.tryMove(1, 0);
+                    break;
+                case 'q': movement.rotateLeft();
+                    break;
+                case 'w': movement.rotateRight();
+                default : break;
+            }
+            Tetromino.draw(t, board, t.pos.x, t.pos.y);
+        }
     }
 
     /**
-     * Increments the score based on the number of lines that are cleared.
-     *
-     * @param linesCleared
+     * Increments the score based on the number of lines that are cleared. Rule:
+     * 1: 100 points
+     * 2: 300 points
+     * 3: 500 points
+     * 4: 800 points
+     * @param linesCleared The number of lines cleared at this move.
      */
     private void incrementScore(int linesCleared) {
-        // TODO: Increment the score based on the number of lines cleared.
-
+        int points = switch (linesCleared) {
+            case 1 -> 100;
+            case 2 -> 300;
+            case 3 -> 500;
+            case 4 -> 800;
+            default -> 0;
+        };
+        score += points;
     }
 
     /**
@@ -116,9 +142,18 @@ public class Tetris {
         // Keeps track of the current number lines cleared
         int linesCleared = 0;
 
-        // TODO: Check how many lines have been completed and clear it the rows if completed.
+        // Check how many lines have been completed and clear it the rows if completed.
+        // Start from the bottom line, move above until there's a line that is not clear.
+        while (isLineFilled(tiles, 0)) {
+            // When the y-th line is filled.
+            linesCleared += 1;
+            removeBottom(tiles);
+            aboveMoveDown(tiles);
+            removeLine(tiles, HEIGHT - 1); // Remove the top line.
+        }
 
-        // TODO: Increment the score based on the number of lines cleared.
+        // Increment the score based on the number of lines cleared.
+        incrementScore(linesCleared);
 
         fillAux();
     }
@@ -130,18 +165,28 @@ public class Tetris {
     public void runGame() {
         resetActionTimer();
 
-        // TODO: Set up your game loop. The game should keep running until the game is over.
-        // Use helper methods inside your game loop, according to the spec description.
-
-
+        while (!isGameOver()) {
+            // This loop starts from creating a piece and ends with the piece being placed.
+            spawnPiece();
+            renderBoard();
+            while (currentTetromino != null) {
+                if (StdDraw.hasNextKeyTyped() || actionDeltaTime() >= 500) {
+                    updateBoard();
+                    renderBoard();
+                }
+            }
+            // When current piece is null.
+            clearLines(board);
+            renderBoard();
+        }
     }
 
     /**
      * Renders the score using the StdDraw library.
      */
     private void renderScore() {
-        // TODO: Use the StdDraw library to draw out the score.
-
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(7, 19, Integer.toString(score));
     }
 
     /**
@@ -298,6 +343,60 @@ public class Tetris {
      */
     private void resetActionTimer() {
         prevActionTimestamp = System.currentTimeMillis();
+    }
+
+
+
+    /**
+     * Return whether the y-th line of tiles is filled.
+     */
+    private boolean isLineFilled(TETile[][] tiles, int y) {
+        // Iterate through the y-th line.
+        for (int x = 0; x < WIDTH; x++) {
+            TETile currentTile = tiles[x][y];
+            // If there's any vacancy, return false.
+            if (currentTile == Tileset.NOTHING) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * Remove the y-th line of the board.
+     */
+    private void removeLine(TETile[][] tiles, int y) {
+        for (int x = 0; x < WIDTH; x++) {
+            tiles[x][y] = Tileset.NOTHING;
+        }
+    }
+
+    /**
+     * Remove the bottom line of the board.
+     */
+    private void removeBottom(TETile[][] tiles) {
+        removeLine(tiles, 0);
+    }
+
+
+    /**
+     * After the bottom is removed, all the tiles above are dropped down.
+     */
+    private void aboveMoveDown(TETile[][] tiles) {
+        for (int y = 1; y < HEIGHT; y++) {
+            moveDown(tiles, y);
+        }
+    }
+
+    /**
+     * Helper method for aboveMoveDown. Move the y-th line down by one tile.
+     * Assume y >= 1.
+     */
+    private void moveDown(TETile[][] tiles, int y) {
+        for (int x = 0; x < WIDTH; x++) {
+            tiles[x][y-1] = tiles[x][y];
+        }
     }
 
 }
