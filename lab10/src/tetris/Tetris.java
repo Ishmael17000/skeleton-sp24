@@ -144,12 +144,19 @@ public class Tetris {
 
         // Check how many lines have been completed and clear it the rows if completed.
         // Start from the bottom line, move above until there's a line that is not clear.
-        while (isLineFilled(tiles, 0)) {
-            // When the y-th line is filled.
-            linesCleared += 1;
-            removeBottom(tiles);
-            aboveMoveDown(tiles);
-            removeLine(tiles, HEIGHT - 1); // Remove the top line.
+        int y = 0;
+        while (y < HEIGHT) {
+            // When the y-th line is filled, delete it and apply corresponding collapse.
+            if (isLineFilled(tiles, y)) {
+                linesCleared += 1;
+                removeLine(tiles, y);
+                aboveMoveDown(tiles, y);
+                removeLine(tiles, HEIGHT - 1);
+                // Restore y to check again.
+                y = 0;
+                continue;
+            }
+            y += 1;
         }
 
         // Increment the score based on the number of lines cleared.
@@ -383,8 +390,8 @@ public class Tetris {
     /**
      * After the bottom is removed, all the tiles above are dropped down.
      */
-    private void aboveMoveDown(TETile[][] tiles) {
-        for (int y = 1; y < HEIGHT; y++) {
+    private void aboveMoveDown(TETile[][] tiles, int h) {
+        for (int y = h + 1; y < HEIGHT; y++) {
             moveDown(tiles, y);
         }
     }
