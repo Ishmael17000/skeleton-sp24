@@ -2,6 +2,7 @@ package core;
 
 
 import tileengine.TETile;
+import utils.RandomUtils;
 
 import java.util.HashMap;
 import java.util.Random;
@@ -57,14 +58,76 @@ public class MapGenerator {
      * Update the tree structure accordingly.
      */
     private void divideRegion() {
-
+        divideRegionHelper(root);
     }
 
 
 
-
+    // Divide one region into two sub-regions.
+    // Update the tree structure accordingly.
     private void divideRegionHelper(Node node) {
+        // Randomly choose a direction.
+        int dir = RandomUtils.uniform(RANDOM, 1);
 
+
+        /*
+         Randomly choose a splitting point.
+         Make sure both parts has enough space for generating rooms.
+         Suppose node is {{a,b},{c,d}}. Split vertically.
+         Take the interval [a,c]. Let [a,x] and (x,c] be two parts.
+         x should satisfy x-a+1 >= min and c-x >= min.
+         min+a-1 <= x <= c-min.
+         */
+        int a = node.region[0][0];
+        int b = node.region[0][1];
+        int c = node.region[1][0];
+        int d = node.region[1][1];
+
+
+        // Split horizontally.
+        if (dir == 0) {
+            int x = switchUniform(MINROOMSIZE+b-1, d-MINROOMSIZE+1);
+            horizontalSplit(x, node);
+        }
+        // Split vertically.
+        else if (dir == 1) {
+            int x = switchUniform(MINROOMSIZE+a-1, c-MINROOMSIZE+1);
+            verticalSplit(x, node);
+        }
+
+
+
+
+        if (canSplit(node.left)) { divideRegionHelper(node.left); }
+        if (canSplit(node.right)) { divideRegionHelper(node.right); }
+    }
+
+
+    private void horizontalSplit(int x, Node node) {
+        int a = node.region[0][0];
+        int b = node.region[0][1];
+        int c = node.region[1][0];
+        int d = node.region[1][1];
+        node.left = new Node(new int[][]{{a, b}, {c, x}});
+        node.right = new Node(new int[][]{{a, x+1}, {c, d}});
+    }
+
+    private void verticalSplit(int x, Node node) {
+        int a = node.region[0][0];
+        int b = node.region[0][1];
+        int c = node.region[1][0];
+        int d = node.region[1][1];
+        node.left = new Node(new int[][]{{a, b}, {x, d}});
+        node.right = new Node(new int[][]{{x+1, b}, {c, d}});
+    }
+
+
+    // Return whether the region has enough size to split.
+    private boolean canSplit(Node node) {
+        int[][] region = node.region;
+        int width = region[1][0] - region[0][0] + 1;
+        int height = region[1][1] - region[0][1] + 1;
+        return (width >= 2 * (MINROOMSIZE + 2)) && (height >= 2 * (MINROOMSIZE + 2));
     }
 
 
@@ -95,20 +158,15 @@ public class MapGenerator {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Return a random integer uniformly distributed in [m,n).
+     * @param m Start (Inclusive).
+     * @param n End (not inclusive).
+     * @return A uniform sample.
+     */
+    private int switchUniform(int m, int n) {
+    return RandomUtils.uniform(RANDOM, n-m) + m;
+    }
 
 
 
