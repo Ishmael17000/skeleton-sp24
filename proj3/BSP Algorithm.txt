@@ -1,0 +1,37 @@
+BSP Algorithm
+1. Create a binary tree with the board as its root.
+Build a tree data structure.
+class Node
+		- region
+		- left, right
+
+2. Split the board into half at random direction and position if size is valid and add the two halves to the children nodes.
+   - size threshold?
+	- An m times n room takes (m+2) times (n+2) spaces (with wall).
+	- Set a min and max size for rooms.
+	- The region should be greater than or equal to (min+2) times (min+2)
+   - how to represent a region
+	- int[][] use coordinate of two corners
+	- int[] use coordinate of bottom-left corner together with width and height
+
+3. Recursively split regions until all leaves reach size threshold.
+4. Generate a room at random for each leaf region.
+	- Generate a rectangular with random width, height and position.
+	- Add wall to the surrounding.
+
+
+5. At each level, for each pair of leaves, connect the two rooms with a corridor.
+	- Randomly choose a room in each side respectively.
+	- Add a path between these rooms.
+	- May encounter another existing path.
+
+6. Recursively climb up and connect until we reach the root.
+
+class MapGenerator
+    Node root
+
+
+
+    class Node
+        int[][] region
+        left, right
