@@ -2,18 +2,20 @@ package core;
 
 
 import tileengine.TETile;
+import tileengine.Tileset;
 import utils.RandomUtils;
 
 import java.util.HashMap;
 import java.util.Random;
 
 /**
- * A class used for generating roguelike rooms and corridors in a world.
- * Use BSP algorithm(see proj3/BSP Algorithm.txt
- * and <a href="https://roguebasin.com/index.php/Basic_BSP_Dungeon_generation">...</a>).
- * The basic idea is to recursively divide the board into sub-regions (forming a tree structure) at random
+ * A class used for generating roguelike rooms and corridors in a 2D-tile based world.
+ * A room is basically a rectangular, and the corridor is a 1-tile height path.
+ * Use BSP algorithm (see proj3/BSP Algorithm.txt
+ * or <a href="https://roguebasin.com/index.php/Basic_BSP_Dungeon_generation">...</a>   for explanation).
+ * The basic idea is to recursively divide the board into sub-regions (forming a binary tree structure) at random
  * and create room of random size and position in each region.
- * After creating these non-intersecting rooms, recursively connect rooms of sister regions by corridors.
+ * After creating these non-intersecting rooms, recursively connect rooms from sister regions by corridors.
  */
 public class MapGenerator {
     private static final int WIDTH = 80;
@@ -22,13 +24,12 @@ public class MapGenerator {
     private final int MINROOMSIZE;
     private final int MAXROOMSIZE;
 
+    // The pseudo-random generator.
     private final Random RANDOM;
 
 
-    private TETile[][] tiles;
-
-
-    private Node root;
+    private TETile[][] tiles; // The board of our world.
+    private final Node root; // The tree structure.
 
 
 
@@ -38,11 +39,12 @@ public class MapGenerator {
         this.MINROOMSIZE = minSize;
         this.RANDOM =  new Random(seed);
 
-        this.root = new Node(new int[][]{{0, 0}, {WIDTH - 1, HEIGHT - 1}});
+        this.root = new Node(new int[][]{{0, 0}, {WIDTH - 1, HEIGHT - 1}}); // The whole board.
     }
 
 
     /**
+     * The main result.
      * Generate and fill in tiles with rooms and corridors at random.
      */
     public void generateMap() {
@@ -67,7 +69,7 @@ public class MapGenerator {
     // Update the tree structure accordingly.
     private void divideRegionHelper(Node node) {
         // Randomly choose a direction.
-        int dir = RandomUtils.uniform(RANDOM, 1);
+        int dir = RandomUtils.uniform(RANDOM, 2);
 
 
         /*
@@ -78,10 +80,7 @@ public class MapGenerator {
          x should satisfy x-a+1 >= min and c-x >= min.
          min+a-1 <= x <= c-min.
          */
-        int a = node.region[0][0];
-        int b = node.region[0][1];
-        int c = node.region[1][0];
-        int d = node.region[1][1];
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
 
 
         // Split horizontally.
@@ -102,21 +101,16 @@ public class MapGenerator {
         if (canSplit(node.right)) { divideRegionHelper(node.right); }
     }
 
-
+    // Split the region horizontally at point x (x belongs to below).
     private void horizontalSplit(int x, Node node) {
-        int a = node.region[0][0];
-        int b = node.region[0][1];
-        int c = node.region[1][0];
-        int d = node.region[1][1];
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
         node.left = new Node(new int[][]{{a, b}, {c, x}});
         node.right = new Node(new int[][]{{a, x+1}, {c, d}});
     }
 
+    // Split the region vertically at point x (x belongs to left).
     private void verticalSplit(int x, Node node) {
-        int a = node.region[0][0];
-        int b = node.region[0][1];
-        int c = node.region[1][0];
-        int d = node.region[1][1];
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
         node.left = new Node(new int[][]{{a, b}, {x, d}});
         node.right = new Node(new int[][]{{x+1, b}, {c, d}});
     }
@@ -137,10 +131,33 @@ public class MapGenerator {
     /**
      * Generate rooms of random size and position in each divided region.
      * Each room has walls surrounding (not include corner tile).
-     * Revise the tiles accordingly.
+     * Update the tiles and nodes accordingly.
      */
     private void generateRooms() {
+        generateRoomsHelper(root);
+    }
 
+    // Generate a room at random in the node's region.
+    // Update the tiles and 'room' variable in the node accordingly.
+    private void generateRoomsHelper(Node node) {
+        // Choose a size at random.
+        int width = switchUniform(MINROOMSIZE, MAXROOMSIZE + 1);
+        int height = switchUniform(MINROOMSIZE, MAXROOMSIZE + 1);
+
+        // Choose the bottom-left corner.
+        // Suppose node is {{a,b},{c,d}}. The corner is {x,y}.
+        // Then x+width-1 <= c, and y+height-1 <= d.
+        // x <= c-width+1, y <= d-height+1.
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
+        int x = switchUniform(a, c-width+2), y=switchUniform(b, d-height+2);
+        node.room = new int[][]{{x, y}, {x+width, y+height}};
+
+        // Update the tiles.
+        putRoom(node);
+        putWall(node);
+
+        if (node.left != null) { generateRoomsHelper(node.left); }
+        if (node.right != null) { generateRoomsHelper(node.right); }
     }
 
 
@@ -154,7 +171,7 @@ public class MapGenerator {
 
 
     private void connectRegionsHelper(Node node1, Node node2) {
-
+        //
     }
 
 
@@ -165,7 +182,36 @@ public class MapGenerator {
      * @return A uniform sample.
      */
     private int switchUniform(int m, int n) {
-    return RandomUtils.uniform(RANDOM, n-m) + m;
+        return RandomUtils.uniform(RANDOM, n-m) + m;
+    }
+
+
+    /**
+     * Fill the tiles of the room with floor.
+     */
+    private void putRoom(Node node) {
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
+        for (int x = a; x <= c; x++) {
+            for (int y = b; y <= d; y++) {
+                tiles[x][y] = Tileset.FLOOR;
+            }
+        }
+    }
+
+
+    /**
+     * Fill the tiles around the room with wall.
+     */
+    private void putWall(Node node) {
+        int a = node.region[0][0], b = node.region[0][1], c = node.region[1][0], d = node.region[1][1];
+        for (int y = b; y <= d; y++) {
+            tiles[a-1][y] = Tileset.WALL;
+            tiles[c+1][y] = Tileset.WALL;
+        }
+        for (int x = a; x <= c; x++) {
+            tiles[x][b-1] = Tileset.WALL;
+            tiles[x][d+1] = Tileset.WALL;
+        }
     }
 
 
@@ -178,7 +224,8 @@ public class MapGenerator {
      * Support some tree traversal methods.
      */
     private class Node {
-        private int[][] region;
+        private final int[][] region;
+        private int[][] room;
         private Node left;
         private Node right;
 

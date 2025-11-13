@@ -1,37 +1,58 @@
-BSP Algorithm
+BSP Algorithm Procedure Summary
+
 1. Create a binary tree with the board as its root.
 Build a tree data structure.
 class Node
-		- region
-		- left, right
+		- int[][] region
+		- Node left, Node right
+		- int[][] room
 
-2. Split the board into half at random direction and position if size is valid and add the two halves to the children nodes.
+2. Split the board into half at random direction and position if size is valid and
+   add the two halves to the children nodes.
    - size threshold?
 	- An m times n room takes (m+2) times (n+2) spaces (with wall).
 	- Set a min and max size for rooms.
 	- The region should be greater than or equal to (min+2) times (min+2)
-   - how to represent a region
-	- int[][] use coordinate of two corners
-	- int[] use coordinate of bottom-left corner together with width and height
+    Use the coordinate of two corners (int[][]) to represent a region.
 
 3. Recursively split regions until all leaves reach size threshold.
+
 4. Generate a room at random for each leaf region.
 	- Generate a rectangular with random width, height and position.
 	- Add wall to the surrounding.
 
 
-5. At each level, for each pair of leaves, connect the two rooms with a corridor.
-	- Randomly choose a room in each side respectively.
+5. At each tree level, for each pair of sister nodes, connect the two regions with a corridor.
+    - Randomly choose a room in each region respectively.
 	- Add a path between these rooms.
-	- May encounter another existing path.
+
+	This part is somehow tricky:
+
+	First, how do we know the set of points we are choosing from?
+	    To avoid excessively random and winding paths, we should connect rooms in adjacent
+	    leaves.
+	    ## Choose two rooms with the least parallel distance?
+
+
+	Next, which side should we choose to open a door?
+	    The side cannot be chosen totally at random.
+	    Suppose we are connecting the two rooms (x stands for wall)
+
+	    x x x x x x x x x x x x x x x x
+        @           x @               x
+        x x x x x x x x x x x x x x x x
+
+        If one door is on the leftmost, and the other is in the middle (marked with @),
+        then there's no way to lead a path.
+
+        Hence, we have to take care by choosing the adjacent sides.
+        Given two sister regions, we first detect whether they are spared apart horizontally
+        or vertically. Then we choose the corresponding sides to open random doors.
+        There's a special case when the walls on two sides are adjacent (like the picture above).
+        In this case we have to take adjacent doors.
+
+
 
 6. Recursively climb up and connect until we reach the root.
 
-class MapGenerator
-    Node root
 
-
-
-    class Node
-        int[][] region
-        left, right
